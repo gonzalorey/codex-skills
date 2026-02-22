@@ -1,0 +1,4 @@
+version: 1
+display_name: Facturacion Monotributo Amigos
+short_description: Cierre mensual de facturación, deuda USD y conciliación YNAB
+default_prompt: Ejecutar el cierre mensual de facturación con gate de últimos 3 días hábiles, actualizar deuda en Sheets, registrar facturas y preparar mensajes WhatsApp.
