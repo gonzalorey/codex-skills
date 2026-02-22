@@ -1,0 +1,47 @@
+timezone: America/Argentina/Buenos_Aires
+business_day_window: 3
+currency:
+  rounding: 2
+invoice:
+  watch_dir: ~/Downloads/facturas-monotributo
+  filename_aliases:
+    santi-favelukes: fave
+    santi-olivieri: olivieri
+people:
+  - name: Santi Favelukes
+    alias: santi-favelukes
+    sheet_id: 1C1OjXvwLsejZqy7Z6b4w2E26J2Uf3-uT4uczmJ1j85I
+    preferred_row_headers:
+      period: [Periodo, Mes]
+      amount_ars: [Monto ARS, ARS]
+      amount_usd: [Monto USD, USD]
+      fx_rate: [Cotizacion, Dolar pactado, FX]
+      note: [Nota, Observaciones]
+    fallback_amount_ars: 0
+    whatsapp_template_key: cierre_facturacion
+    ynab_account_id: 8df20190-7e33-4d15-a1d8-bcf6fcc36abf
+  - name: Santi Olivieri
+    alias: santi-olivieri
+    sheet_id: 11sSsoqb2cgV2CBSvYRSNhK3xqxrPZB8rm__yC_hUYjo
+    preferred_row_headers:
+      period: [Periodo, Mes]
+      amount_ars: [Monto ARS, ARS]
+      amount_usd: [Monto USD, USD]
+      fx_rate: [Cotizacion, Dolar pactado, FX]
+      note: [Nota, Observaciones]
+    fallback_amount_ars: 0
+    whatsapp_template_key: cierre_facturacion
+    ynab_account_id: af6170c2-7d18-458d-b30a-d9ea7c6a35f2
+google:
+  service_account_json: ~/.config/codex/google-service-account.json
+sheets:
+  debt_registry: Deuda
+  invoice_registry:
+    spreadsheet_id: 1xyRwlQ7VkBW7jxr9p1VukTbKrT7jvsAeZ7D92f0dlok
+    tab_name: Facturas
+drive:
+  invoice_folder_id: 1opKUUpHzWH33VdWJ8USClbezGxG5__d-
+ynab:
+  personal_access_token: ${YNAB_PERSONAL_ACCESS_TOKEN}
+  budget_id: 3314bb07-89d2-4c28-bae7-8bc909c819b5
+  tracking_entry_sign: -1
