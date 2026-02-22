@@ -1,0 +1,21 @@
+{
+  "Referencia Matrix": [
+    {
+      "Período": "feb 2026",
+      "Días hábiles": "21,65",
+      "Horas/día": "6",
+      "Básico/hora": " AR$6.000,00",
+      "Viáticos/día": " AR$3.320,00",
+      "Antiguedad": "1"
+    }
+  ],
+  "Eventos": [
+    {
+      "Fecha": "12/2/2026",
+      "Tipo de evento": "Horas Extra",
+      "Monto adicional/descuento": " AR$12.000,00",
+      "Descripción": "2hs extra"
+    }
+  ],
+  "Pagos": []
+}

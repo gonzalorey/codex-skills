@@ -1,0 +1,5 @@
+version: 1
+interface:
+  display_name: Recibos Empleadas Domesticas
+  short_description: Liquidacion mensual ARCA con validacion previa
+  default_prompt: Liquidar sueldos de Irma y Mariza para este mes con validacion final antes de enviar.
