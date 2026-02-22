@@ -139,7 +139,13 @@ def upload_invoice_file(file_path: Path, folder_id: str, config: Dict[str, Any],
         )
         with urllib.request.urlopen(req, timeout=20) as response:
             body = response.read().decode("utf-8", errors="ignore")
-        return {"status": "webhook", "response": body, "drive_url": ""}
+        # Green: parse drive_url from webhook JSON response when available.
+        # Blue (fallback): return empty string if the webhook response doesn't include it.
+        try:
+            drive_url = json.loads(body).get("drive_url", "")
+        except (json.JSONDecodeError, AttributeError):
+            drive_url = ""
+        return {"status": "webhook", "response": body, "drive_url": drive_url}
 
     creds = _load_service_account(config)
     if not creds:
@@ -164,8 +170,67 @@ def upload_invoice_file(file_path: Path, folder_id: str, config: Dict[str, Any],
     }
 
 
-def read_last_month_amount(*_: Any, **__: Any) -> Optional[float]:
-    # Placeholder for real read path. Keep deterministic fallback behavior in v1.
+def read_last_month_amount(person: Dict[str, Any], period: str, config: Optional[Dict[str, Any]] = None) -> Optional[float]:
+    """Return the most recent ARS amount recorded in the person's debt sheet.
+
+    Blue path (fallback): returns None when Google client dependencies are missing,
+    the service account file doesn't exist, or the sheet has no data rows yet.
+    Green path: reads the last row of the debt-registry tab and extracts the ARS amount.
+    """
+    if config is None:
+        return None
+
+    creds = _load_service_account(config)
+    if not creds:
+        return None
+
+    sheets = _build_service("sheets", "v4", creds)
+    if not sheets:
+        return None
+
+    spreadsheet_id = person.get("sheet_id", "")
+    if not spreadsheet_id:
+        return None
+
+    try:
+        from .close_lib import detect_header_indexes, normalize_header, parse_amount
+    except ImportError:  # pragma: no cover
+        from close_lib import detect_header_indexes, normalize_header, parse_amount
+
+    debt_tab = (config.get("sheets") or {}).get("debt_registry", "Deuda")
+    preferred = person.get("preferred_row_headers", {})
+
+    try:
+        result = (
+            sheets.spreadsheets()
+            .values()
+            .get(spreadsheetId=spreadsheet_id, range=f"{debt_tab}!A:Z")
+            .execute()
+        )
+    except Exception:
+        return None
+
+    rows = result.get("values", [])
+    if len(rows) < 2:
+        # No header + data rows yet.
+        return None
+
+    try:
+        indexes = detect_header_indexes(rows[0], preferred)
+    except Exception:
+        return None
+
+    ars_col = indexes.get("amount_ars")
+    if ars_col is None:
+        return None
+
+    # Walk backwards to find the most recent non-empty ARS value.
+    for row in reversed(rows[1:]):
+        if ars_col < len(row) and row[ars_col].strip():
+            try:
+                return float(parse_amount(row[ars_col]))
+            except Exception:
+                continue
     return None
 
 

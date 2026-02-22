@@ -149,12 +149,33 @@ def _parse_yaml_block(lines: List[Tuple[int, str]], index: int, indent: int) -> 
 
 
 def _load_config(path: str) -> Dict[str, Any]:
+    """Load and parse the config file.
+
+    Blue/green strategy:
+      Green path — use PyYAML (``yaml.safe_load``) when available; it handles the
+      full YAML spec and resolves ``${VAR}`` strings correctly as plain scalars.
+      Blue path  — fall back to the built-in minimal parser when PyYAML is not
+      installed, preserving backward compatibility without requiring an extra dep.
+    """
     config_path = expand_path(path)
     if not config_path.exists():
         raise CloseError(f"missing config file: {config_path}")
     text = config_path.read_text(encoding="utf-8")
     if text.strip().startswith("{"):
         return json.loads(text)
+
+    # Green: prefer PyYAML for correct, spec-compliant parsing.
+    try:
+        import yaml  # type: ignore
+
+        parsed = yaml.safe_load(text)
+        if not isinstance(parsed, dict):
+            raise CloseError("root config must be a map")
+        return parsed
+    except ImportError:
+        pass  # fall through to blue path
+
+    # Blue: built-in minimal parser (no external deps).
     normalized: List[Tuple[int, str]] = []
     for raw_line in text.splitlines():
         line = raw_line.split("#", 1)[0].rstrip()
@@ -169,9 +190,9 @@ def _load_config(path: str) -> Dict[str, Any]:
     return parsed
 
 
-def _resolve_amounts(person: Dict[str, Any], fx_rate: float, period: str, args: argparse.Namespace) -> Dict[str, Any]:
+def _resolve_amounts(person: Dict[str, Any], fx_rate: float, period: str, args: argparse.Namespace, config: Dict[str, Any] | None = None) -> Dict[str, Any]:
     fallback = float(person.get("fallback_amount_ars", 0))
-    last_amount_ars = read_last_month_amount(person=person, period=period)
+    last_amount_ars = read_last_month_amount(person=person, period=period, config=config)
     proposed_ars = float(last_amount_ars if last_amount_ars is not None else fallback)
     proposed_usd = float(round_money(proposed_ars / fx_rate if fx_rate else 0, 2))
 
@@ -203,6 +224,9 @@ def _render_message(template: str, values: Dict[str, Any]) -> str:
     rendered = template
     for key, value in values.items():
         rendered = rendered.replace("{" + key + "}", str(value))
+    # Blue/green: convert legacy literal \n sequences from old templates to real newlines.
+    # Templates should use actual newlines (green), but this handles the blue (legacy) case.
+    rendered = rendered.replace("\\n", "\n")
     return rendered
 
 
@@ -251,7 +275,7 @@ def main() -> int:
     invoice_files = _collect_invoices(invoice_input_dir)
 
     for person in config.get("people", []):
-        person_amounts = _resolve_amounts(person, fx_rate, period, args)
+        person_amounts = _resolve_amounts(person, fx_rate, period, args, config=config)
         note = "Monto mensual por defecto (histórico)"
 
         debt_row = build_debt_row(
@@ -318,9 +342,19 @@ def main() -> int:
             }
         )
 
+    # Build a lookup: alias → list of filename tokens to match against.
+    # Green path: use explicit filename_aliases from config (e.g. {"santi-favelukes": "fave"}).
+    # Blue path (fallback): if no alias entry exists, fall back to the last segment of the alias.
+    _alias_cfg: Dict[str, Any] = (config.get("invoice") or {}).get("filename_aliases", {})
+
+    def _matches_invoice(person: Dict[str, Any], filename: str) -> bool:
+        alias = person["alias"]
+        token = _alias_cfg.get(alias) or alias.split("-")[-1]
+        return str(token).lower() in filename.lower()
+
     invoice_results: List[Dict[str, Any]] = []
     for invoice in invoice_files:
-        owner = next((p for p in config["people"] if p["alias"].split("-")[-1] in invoice.name.lower()), None)
+        owner = next((p for p in config["people"] if _matches_invoice(p, invoice.name)), None)
         if not owner:
             invoice_results.append({"file": invoice.name, "status": "ignored", "reason": "owner_not_detected"})
             continue
