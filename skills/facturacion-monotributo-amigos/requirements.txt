@@ -1,0 +1,8 @@
+# Optional Google integration (Sheets + Drive upload)
+google-auth>=2.0
+google-auth-httplib2>=0.1
+google-api-python-client>=2.0
+
+# Optional: spec-compliant YAML config loading (green path in _load_config)
+# Falls back to built-in minimal parser when not installed.
+pyyaml>=6.0

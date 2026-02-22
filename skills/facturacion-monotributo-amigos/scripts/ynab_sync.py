@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import urllib.error
 import urllib.request
 from datetime import date
 from typing import Any, Dict
@@ -55,9 +56,15 @@ def create_tracking_transaction(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=20) as response:
-        body = response.read().decode("utf-8", errors="ignore")
-    return {"status": "ok", "response": body, "transaction": transaction}
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            body = response.read().decode("utf-8", errors="ignore")
+        return {"status": "ok", "response": body, "transaction": transaction}
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="ignore")
+        return {"status": "error", "http_status": exc.code, "response": body, "transaction": transaction}
+    except urllib.error.URLError as exc:
+        return {"status": "error", "reason": str(exc.reason), "transaction": transaction}
 
 
 def parse_args() -> argparse.Namespace:

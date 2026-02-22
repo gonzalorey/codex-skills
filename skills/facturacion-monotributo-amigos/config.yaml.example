@@ -1,3 +1,17 @@
+# config.yaml.example — copy to config.yaml and fill in real values.
+# All ${VAR} placeholders are resolved from environment variables at runtime.
+# Export the variables in your shell or place them in a .env file (not committed).
+#
+# Required env vars:
+#   SANTI_FAVELUKES_SHEET_ID          — Google Sheet ID for Santi Favelukes debt registry
+#   SANTI_FAVELUKES_YNAB_ACCOUNT_ID   — YNAB tracking-account ID for Santi Favelukes
+#   SANTI_OLIVIERI_SHEET_ID           — Google Sheet ID for Santi Olivieri debt registry
+#   SANTI_OLIVIERI_YNAB_ACCOUNT_ID    — YNAB tracking-account ID for Santi Olivieri
+#   INVOICE_REGISTRY_SPREADSHEET_ID   — Google Sheet ID for the shared invoice log
+#   INVOICE_DRIVE_FOLDER_ID           — Google Drive folder ID for uploaded PDFs
+#   YNAB_PERSONAL_ACCESS_TOKEN        — YNAB personal access token (Settings → Developer)
+#   YNAB_BUDGET_ID                    — YNAB budget UUID
+
 timezone: America/Argentina/Buenos_Aires
 business_day_window: 3
 currency:
@@ -17,7 +31,7 @@ people:
       amount_usd: [Monto USD, USD]
       fx_rate: [Cotizacion, Dolar pactado, FX]
       note: [Nota, Observaciones]
-    fallback_amount_ars: 0
+    fallback_amount_ars: 100000
     whatsapp_template_key: cierre_facturacion
     ynab_account_id: ${SANTI_FAVELUKES_YNAB_ACCOUNT_ID}
   - name: Santi Olivieri
@@ -29,7 +43,7 @@ people:
       amount_usd: [Monto USD, USD]
       fx_rate: [Cotizacion, Dolar pactado, FX]
       note: [Nota, Observaciones]
-    fallback_amount_ars: 0
+    fallback_amount_ars: 100000
     whatsapp_template_key: cierre_facturacion
     ynab_account_id: ${SANTI_OLIVIERI_YNAB_ACCOUNT_ID}
 google:
